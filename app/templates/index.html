@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Recognition</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Добавить человека</h1>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>ФИО:</label>
+                <input type="text" name="full_name" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Фото:</label>
+                <input type="file" name="face_image" accept="image/*" required>
+                <div id="preview"></div>
+            </div>
+            
+            <button type="submit">Отправить</button>
+        </form>
+
+        <h2>Список людей</h2>
+        <div id="peopleList" class="people-grid"></div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
