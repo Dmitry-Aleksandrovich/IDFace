@@ -9,6 +9,9 @@ services:
       - .env
     depends_on:
       - db
+    user: 1000:1000
+    volumes:
+      - ./static/faces:/app/static/faces 
 
   db:
     image: postgres:13
