@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
-load_dotenv()
+load_dotenv(dotenv_path=".tg_key.env")
 
 telegram_bot_token = os.getenv("telegram_bot_token")
 
