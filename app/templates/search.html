@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Поиск лица</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Поиск лица</h1>
+        <form id="searchForm" method="post" action="/search-face" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Выберите изображение:</label>
+                <input type="file" name="face_image" accept="image/*" required>
+            </div>
+            <button type="submit">Найти похожее лицо</button>
+        </form>
+
+        <!-- Блок для отображения результатов поиска -->
+        <div id="results">
+            <!-- Здесь будут отображаться результаты -->
+        </div>
+
+        <br>
+        <a href="/"><button>Вернуться на главную</button></a>
+    </div>
+
+    <script>
+        const searchForm = document.getElementById("searchForm");
+        const resultsDiv = document.getElementById("results");
+
+        searchForm.addEventListener("submit", async (e) => {
+            e.preventDefault(); // отменяем отправку формы по умолчанию
+            resultsDiv.innerHTML = "<p>Обработка запроса...</p>";
+
+            const formData = new FormData(searchForm);
+            try {
+                const response = await fetch("/search-face", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    resultsDiv.innerHTML = `<p style="color:red;">Ошибка: ${errorData.detail}</p>`;
+                    return;
+                }
+                
+                const data = await response.json();
+                const matches = data.matches;
+                if (matches.length === 0) {
+                    resultsDiv.innerHTML = "<p>Подобных лиц не найдено.</p>";
+                } else {
+                    let html = "<h2>Найденные совпадения</h2>";
+                    html += "<ul>";
+                    matches.forEach(match => {
+                        html += `<li>
+                            <p>ФИО: ${match.full_name}</p>
+                            <p>Расстояние: ${match.distance.toFixed(4)}</p>
+                            <img src="${match.face_image_path}" alt="${match.full_name}" style="max-width:200px;"/>
+                        </li>`;
+                    });
+                    html += "</ul>";
+                    resultsDiv.innerHTML = html;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color:red;">Ошибка: ${error}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
