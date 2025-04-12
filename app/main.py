@@ -1,5 +1,6 @@
 import numpy as np
 import face_recognition
+import json
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Request, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -44,10 +45,22 @@ async def add_person(
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid image file")
 
-    # Сохраняем в БД
+    # Вычисляем эмбеддинг для сохраненного изображения
+    try:
+        saved_img = face_recognition.load_image_file(file_path)
+        encodings = face_recognition.face_encodings(saved_img)
+        if not encodings:
+            raise HTTPException(status_code=400, detail="No face detected in the saved image")
+        embedding = encodings[0]
+        embedding_json = json.dumps(embedding.tolist())
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error computing face embedding: {e}")
+
+    # Сохраняем в БД данные о человеке, включая эмбеддинг
     db_person = models.Person(
         full_name=full_name,
-        face_image_path=file_path
+        face_image_path=file_path,
+        embedding=embedding_json
     )
     
     try:
@@ -56,7 +69,7 @@ async def add_person(
         db.refresh(db_person)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Name already exists")
+        raise HTTPException(status_code=400, detail="Name already exists or database error")
 
     return {"status": "success", "person_id": db_person.id}
 
@@ -65,7 +78,7 @@ async def search_face(
     face_image: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # Вычисляем embedding для входного изображения
+    # Вычисляем эмбеддинг для входного изображения
     try:
         face_image.file.seek(0)
         input_img = face_recognition.load_image_file(face_image.file)
@@ -76,17 +89,14 @@ async def search_face(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing input image: {e}")
 
-    # Сравниваем с каждым лицом в базе
+    # Сравниваем с эмбеддингами, сохраненными в БД
     persons = db.query(models.Person).all()
     results = []
     for person in persons:
         try:
-            db_img = face_recognition.load_image_file(person.face_image_path)
-            db_encodings = face_recognition.face_encodings(db_img)
-            if not db_encodings:
-                continue  # если лицо не обнаружено, пропускаем запись
-            db_encoding = db_encodings[0]
-            distance = np.linalg.norm(input_encoding - db_encoding)
+            # Десериализуем сохранённый эмбеддинг из БД
+            stored_embedding = np.array(json.loads(person.embedding))
+            distance = np.linalg.norm(input_encoding - stored_embedding)
             results.append({
                 "person_id": person.id,
                 "full_name": person.full_name,
@@ -94,7 +104,7 @@ async def search_face(
                 "distance": distance
             })
         except Exception as e:
-            continue  # если ошибка при обработке конкретного изображения, пропускаем
+            continue  # в случае ошибки, пропускаем запись
 
     # Задаем порог совпадения (например, 0.6)
     threshold = 0.6
@@ -107,7 +117,7 @@ async def search_face(
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Новый эндпоинт для отображения страницы поиска лица
+# Эндпоинт для отображения страницы поиска лица
 @app.get("/search")
 async def search_page(request: Request):
     return templates.TemplateResponse("search.html", {"request": request})
@@ -117,7 +127,8 @@ async def get_people(db: Session = Depends(get_db)):
     people = db.query(models.Person).all()
     return [
         {"full_name": p.full_name, 
-         "face_image_path": p.face_image_path}
+         "face_image_path": p.face_image_path,
+         "embedding": p.embedding}
         for p in people
     ]
 
