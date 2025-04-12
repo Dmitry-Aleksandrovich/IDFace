@@ -4,13 +4,38 @@ import requests
 import face_recognition
 import telegram
 import asyncio
+import socket
+import os
+
+from dotenv import load_dotenv
+from datetime import datetime
+
+load_dotenv()
+
+telegram_bot_token = os.getenv("telegram_bot_token")
+
+# Получение IP-адреса и доменного имени
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))  # Google DNS — просто для выбора интерфейса
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "Не удалось определить"
+
+hostname = socket.gethostname()
+local_ip = get_local_ip()
+domain_name = socket.getfqdn()
+
+
 
 # URL для эндпоинта /search-face
 url = "http://localhost:8000/search-face"
 
 # Telegram bot settings
-telegram_bot_token = '7873745697:AAGTzIzKV0iTkZh2JWBsydHK61FKb-TbOkU'  # Вставьте свой токен
-telegram_chat_id = '743292242'  # Вставьте свой chat_id (можно получить через @userinfobot)
+telegram_chat_id = '743292242'  # Вставьте свой chat_id 
 
 # Инициализация бота
 bot = telegram.Bot(token=telegram_bot_token)
@@ -78,16 +103,31 @@ try:
             data = response.json()
             print("Ответ сервера:", data)
 
-            # Если найдено совпадение в базе
+            current_unix_time = int(time.time())
+            readable_time = datetime.fromtimestamp(current_unix_time).strftime("%Y-%m-%d %H:%M:%S")
+
+            # Общая часть для любого сообщения
+            time_info = (
+                f"Unix-время: {current_unix_time}\n"
+                f"Локальное время: {readable_time}\n"
+                f"IP-адрес: {local_ip}\n"
+                f"Доменное имя: {domain_name}"
+            )
+
             if data.get("matches"):
                 for match in data["matches"]:
                     print(f"Найдено совпадение с: {match}")
-                    message = f"Оповещение! Найдено лицо в базе данных: {match}"
+                    message = f"🔒 Оповещение!\nНайдено лицо в базе данных: {match}\n{time_info}"
                     send_telegram_alert(message)
             else:
                 print("Лицо не найдено в базе данных")
-                message = "Оповещение! Обнаружено новое лицо, отсутствующее в базе данных!"
+                message = f"⚠️ Обнаружено новое лицо, отсутствующее в базе данных!\n{time_info}"
                 send_telegram_alert(message)
+
+        except Exception as e:
+            print("Ошибка при отправке или получении ответа:", e)
+
+
 
         except Exception as e:
             print("Ошибка при отправке или получении ответа:", e)
