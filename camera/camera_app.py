@@ -12,7 +12,11 @@ from datetime import datetime
 
 load_dotenv(dotenv_path=".tg_key.env")
 
+#token your tg bot 
 telegram_bot_token = os.getenv("telegram_bot_token")
+
+#your tg chat id
+telegram_chat_id = os.getenv("telegram_chat_id")
 
 # Получение IP-адреса и доменного имени
 def get_local_ip():
@@ -33,9 +37,6 @@ domain_name = socket.getfqdn()
 
 # URL для эндпоинта /search-face
 url = "http://localhost:8000/search-face"
-
-# Telegram bot settings
-telegram_chat_id = '743292242'  # Вставьте свой chat_id 
 
 # Инициализация бота
 bot = telegram.Bot(token=telegram_bot_token)
