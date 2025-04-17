@@ -36,7 +36,8 @@ domain_name = socket.getfqdn()
 
 
 # URL для эндпоинта /search-face
-url = "http://localhost:8000/search-face"
+telegram_chat_id = os.getenv("url")
+# как пример url = "http://localhost:8000/search-face"
 
 # Инициализация бота
 bot = telegram.Bot(token=telegram_bot_token)

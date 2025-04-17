@@ -66,6 +66,7 @@ cd face-recognition-app
 ```env
 telegram_bot_token=your_telegram_token
 telegram_chat_id=your_telegram_chat_id
+url="http://your_ip_address:8000/search-face" #url для общения с сервером
 ```
 
 ### 3. Запусти систему
