@@ -78,7 +78,10 @@ docker-compose up --build
 ### 4. Камера
 
 ```bash
-python3 camera/camera_app.py
+python3 -m venv venv #Создание окружения
+source venv/bin/activate #вход в окружение
+pip install -r camera/requirements.txt #установка зависемостей
+python3 camera/camera_app.py #запуск
 ```
 
 ---
