@@ -2,5 +2,4 @@ opencv-python
 requests
 face_recognition
 python-telegram-bot
-asyncio
 python-dotenv

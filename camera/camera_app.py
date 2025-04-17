@@ -3,7 +3,6 @@ import time
 import requests
 import face_recognition
 import telegram
-import asyncio
 import socket
 import os
 
